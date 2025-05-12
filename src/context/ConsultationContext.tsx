@@ -45,8 +45,8 @@ interface ConsultationContextType {
   
   // Doctors
   recommendedDoctors: Doctor[];
-  selectedDoctor: Doctor | null;
-  setSelectedDoctor: (doctor: Doctor | null) => void;
+  selectedDoctor: string | null;  // Changed from Doctor | null to string | null
+  setSelectedDoctor: (doctor: string | null) => void;  // Changed parameter type
   
   // Booking
   selectedDate: string | null;
@@ -94,7 +94,7 @@ export const ConsultationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   
   // Doctors state
   const [recommendedDoctors, setRecommendedDoctors] = useState<Doctor[]>([]);
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);  // Changed from Doctor | null
   
   // Booking state
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
