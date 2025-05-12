@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { Phone, Video, MessageCircle, User } from 'lucide-react';
 import { useConsultation } from '@/context/ConsultationContext';
 import { hasAnonymousToken } from '@/utils/localStorage';
@@ -23,6 +23,17 @@ const ConsultationHistory: React.FC = () => {
     'video': <Video className="h-4 w-4" />,
     'whatsapp': <MessageCircle className="h-4 w-4" />,
     'in-person': <User className="h-4 w-4" />
+  };
+  
+  // Safe format function to handle potentially invalid dates
+  const safeFormat = (dateString: string, formatString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return isValid(date) ? format(date, formatString) : 'Invalid Date';
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return 'Invalid Date';
+    }
   };
   
   // If no anonymous token, show token missing message
@@ -94,10 +105,10 @@ const ConsultationHistory: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <div>
                         <CardTitle className="text-base">
-                          {format(new Date(consultation.date), 'MMMM d, yyyy')}
+                          {safeFormat(consultation.date, 'MMMM d, yyyy')}
                         </CardTitle>
                         <CardDescription>
-                          {format(new Date(consultation.date), 'h:mm a')}
+                          {safeFormat(consultation.date, 'h:mm a')}
                         </CardDescription>
                       </div>
                       <Badge>Upcoming</Badge>
@@ -159,10 +170,10 @@ const ConsultationHistory: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <div>
                         <CardTitle className="text-base">
-                          {format(new Date(consultation.date), 'MMMM d, yyyy')}
+                          {safeFormat(consultation.date, 'MMMM d, yyyy')}
                         </CardTitle>
                         <CardDescription>
-                          {format(new Date(consultation.date), 'h:mm a')}
+                          {safeFormat(consultation.date, 'h:mm a')}
                         </CardDescription>
                       </div>
                       <Badge variant="outline">Completed</Badge>
