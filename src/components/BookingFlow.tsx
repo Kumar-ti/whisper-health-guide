@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Phone, Video, MessageCircle, User } from 'lucide-react';
 import { useConsultation } from '@/context/ConsultationContext';
+import mockDoctors from '@/data/mockDoctors';
 
 // Consultation mode options
 const CONSULTATION_MODES = [
@@ -45,7 +46,7 @@ const BookingFlow: React.FC = () => {
   const { toast } = useToast();
   
   const { 
-    selectedDoctor, 
+    selectedDoctor: selectedDoctorId, 
     selectedDate, setSelectedDate,
     selectedTime, setSelectedTime,
     selectedMode, setSelectedMode,
@@ -56,8 +57,11 @@ const BookingFlow: React.FC = () => {
   const [activeStep, setActiveStep] = useState('date'); // 'date', 'time', 'mode'
   const [date, setDate] = useState<Date | undefined>(selectedDate ? new Date(selectedDate) : undefined);
   
+  // Find the selected doctor object using the doctor ID
+  const selectedDoctor = mockDoctors.find(doctor => doctor.id === selectedDoctorId);
+  
   // Redirect if no doctor is selected
-  if (!selectedDoctor) {
+  if (!selectedDoctorId || !selectedDoctor) {
     navigate('/doctors');
     return null;
   }
