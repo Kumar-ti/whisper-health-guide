@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,7 +97,7 @@ const ConsultationHistory: React.FC = () => {
     const consultation = pastConsultations.find(c => c.id === consultationId);
     if (consultation) {
       // Set the existing details in the context for the booking flow
-      setSelectedDoctor(consultation.doctorId);  // Now this works because the context expects a string
+      setSelectedDoctor(consultation.doctorId);
       setSelectedMode(consultation.mode);
     }
   };

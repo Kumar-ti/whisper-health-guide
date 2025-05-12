@@ -7,14 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Check, Calendar, Clock, Phone, Video, MessageCircle, User, Home } from 'lucide-react';
 import { useConsultation } from '@/context/ConsultationContext';
 import { hasAnonymousToken } from '@/utils/localStorage';
-import mockDoctors from '@/data/mockDoctors';
 
 const Confirmation: React.FC = () => {
   const navigate = useNavigate();
-  const { selectedDoctor: selectedDoctorId, selectedDate, selectedTime, selectedMode, resetBookingData } = useConsultation();
-  
-  // Find the selected doctor object using the doctor ID
-  const selectedDoctor = mockDoctors.find(doctor => doctor.id === selectedDoctorId);
+  const { selectedDoctor, selectedDate, selectedTime, selectedMode, resetBookingData } = useConsultation();
   
   // Map of consultation mode to icon
   const modeIconMap: Record<string, React.ReactNode> = {
@@ -33,7 +29,7 @@ const Confirmation: React.FC = () => {
   };
   
   // Get consultation details (ensure we have all required data)
-  if (!selectedDoctorId || !selectedDoctor || !selectedDate || !selectedTime || !selectedMode) {
+  if (!selectedDoctor || !selectedDate || !selectedTime || !selectedMode) {
     navigate('/');
     return null;
   }
