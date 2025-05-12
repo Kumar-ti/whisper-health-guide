@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Calendar, Clock, Phone, Video, MessageCircle, User } from 'lucide-react';
+import { Check, Calendar, Clock, Phone, Video, MessageCircle, User, Home } from 'lucide-react';
 import { useConsultation } from '@/context/ConsultationContext';
 import { hasAnonymousToken } from '@/utils/localStorage';
 
@@ -43,6 +43,12 @@ const Confirmation: React.FC = () => {
   // Handle viewing consultation history
   const handleViewHistory = () => {
     navigate('/history');
+  };
+
+  // Handle going home
+  const handleGoHome = () => {
+    resetBookingData();
+    navigate('/');
   };
   
   return (
@@ -124,6 +130,15 @@ const Confirmation: React.FC = () => {
           onClick={handleViewHistory}
         >
           View My Consultations
+        </Button>
+
+        <Button
+          variant="outline"
+          className="w-full flex items-center gap-2" 
+          onClick={handleGoHome}
+        >
+          <Home className="h-4 w-4" />
+          Go to Home
         </Button>
       </div>
       
