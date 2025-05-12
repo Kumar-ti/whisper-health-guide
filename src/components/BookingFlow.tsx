@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -95,9 +94,14 @@ const BookingFlow: React.FC = () => {
       return;
     }
     
+    // Create a proper ISO date string by combining date and time
+    const [hours, minutes] = selectedTime.split(':');
+    const bookingDate = new Date(selectedDate);
+    bookingDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+    
     // Add the consultation to history
     addConsultation({
-      date: `${selectedDate}T${selectedTime}`,
+      date: bookingDate.toISOString(),
       doctorId: selectedDoctor.id,
       symptoms: currentSymptoms,
       status: 'scheduled',

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +25,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const ConsultationHistory: React.FC = () => {
   const navigate = useNavigate();
   const { pastConsultations, selectedDate, selectedTime, selectedMode, selectedDoctor, 
-    addConsultation, setSelectedDate, setSelectedTime, setSelectedMode, setSelectedDoctor } = useConsultation();
+    addConsultation, setSelectedDate, setSelectedTime, setSelectedMode, setSelectedDoctor, recommendedDoctors } = useConsultation();
   
   // States for UI elements
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -64,8 +63,8 @@ const ConsultationHistory: React.FC = () => {
   // Safe format function to handle potentially invalid dates
   const safeFormat = (dateString: string, formatString: string): string => {
     try {
-      // First try to parse the dateString as an ISO date string
-      const date = parseISO(dateString);
+      // Try to create a Date object first
+      const date = new Date(dateString);
       
       // Check if the date is valid
       if (!isValid(date)) {
@@ -97,7 +96,11 @@ const ConsultationHistory: React.FC = () => {
     const consultation = pastConsultations.find(c => c.id === consultationId);
     if (consultation) {
       // Set the existing details in the context for the booking flow
-      setSelectedDoctor(consultation.doctorId);
+      // We need to find the actual doctor object from recommendedDoctors
+      const doctor = recommendedDoctors.find(d => d.id === consultation.doctorId);
+      if (doctor) {
+        setSelectedDoctor(doctor);
+      }
       setSelectedMode(consultation.mode);
     }
   };

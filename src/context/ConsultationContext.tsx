@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { getAnonymousToken, saveAnonymousToken } from '../utils/localStorage';
 
@@ -137,24 +136,37 @@ export const ConsultationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   
   // Add or update a consultation in history
   const addConsultation = (consultation: Omit<Consultation, 'id'> & { id?: string }) => {
-    if (consultation.id) {
-      // Update existing consultation
-      setPastConsultations(currentConsultations => 
-        currentConsultations.map(c => 
-          c.id === consultation.id ? { ...consultation, id: consultation.id } as Consultation : c
-        )
-      );
-    } else {
-      // Add new consultation
-      const newConsultation = {
+    try {
+      // Ensure date is in ISO format and valid
+      const date = new Date(consultation.date);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date');
+      }
+      
+      const formattedConsultation = {
         ...consultation,
-        id: crypto.randomUUID()
-      } as Consultation;
-      setPastConsultations([newConsultation, ...pastConsultations]);
+        date: date.toISOString()
+      };
+
+      if (consultation.id) {
+        // Update existing consultation
+        setPastConsultations(currentConsultations => 
+          currentConsultations.map(c => 
+            c.id === consultation.id ? { ...formattedConsultation, id: consultation.id } as Consultation : c
+          )
+        );
+      } else {
+        // Add new consultation
+        const newConsultation = {
+          ...formattedConsultation,
+          id: crypto.randomUUID()
+        } as Consultation;
+        setPastConsultations([newConsultation, ...pastConsultations]);
+      }
+    } catch (error) {
+      console.error('Error adding consultation:', error);
+      // You might want to show a toast or error message to the user here
     }
-    
-    // In a real app, we would save this to a database or localStorage
-    // associated with the anonymous ID
   };
   
   // Reset booking-related data
