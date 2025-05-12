@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format, isValid, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Phone, Video, MessageCircle, User, Calendar, Clock, ArrowUp, X, AlertTriangle } from 'lucide-react';
 import { useConsultation } from '@/context/ConsultationContext';
 import { hasAnonymousToken } from '@/utils/localStorage';
@@ -60,21 +60,15 @@ const ConsultationHistory: React.FC = () => {
     'in-person': <User className="h-4 w-4" />
   };
   
-  // Safe format function to handle potentially invalid dates
-  const safeFormat = (dateString: string, formatString: string): string => {
+  // Format date function that properly handles date strings
+  const formatDate = (dateString: string, formatString: string): string => {
     try {
-      // First try to parse the dateString as an ISO date string
+      // Try to parse the date string
       const date = parseISO(dateString);
-      
-      // Check if the date is valid
-      if (!isValid(date)) {
-        return 'Invalid Date';
-      }
-      
-      // If valid, format it
+      // Format the date
       return format(date, formatString);
     } catch (error) {
-      console.error("Error formatting date:", error);
+      console.error(`Error formatting date: ${dateString}`, error);
       return 'Invalid Date';
     }
   };
@@ -96,7 +90,7 @@ const ConsultationHistory: React.FC = () => {
     const consultation = pastConsultations.find(c => c.id === consultationId);
     if (consultation) {
       // Set the existing details in the context for the booking flow
-      setSelectedDoctor(consultation.doctorId);  // Now this works because the context expects a string
+      setSelectedDoctor(consultation.doctorId); 
       setSelectedMode(consultation.mode);
     }
   };
@@ -213,10 +207,10 @@ const ConsultationHistory: React.FC = () => {
                       <div className="flex justify-between items-center">
                         <div>
                           <CardTitle className="text-base">
-                            {safeFormat(consultation.date, 'MMMM d, yyyy')}
+                            {formatDate(consultation.date, 'MMMM d, yyyy')}
                           </CardTitle>
                           <CardDescription>
-                            {safeFormat(consultation.date, 'h:mm a')}
+                            {formatDate(consultation.date, 'h:mm a')}
                           </CardDescription>
                         </div>
                         <Badge>Upcoming</Badge>
@@ -298,10 +292,10 @@ const ConsultationHistory: React.FC = () => {
                       <div className="flex justify-between items-center">
                         <div>
                           <CardTitle className="text-base">
-                            {safeFormat(consultation.date, 'MMMM d, yyyy')}
+                            {formatDate(consultation.date, 'MMMM d, yyyy')}
                           </CardTitle>
                           <CardDescription>
-                            {safeFormat(consultation.date, 'h:mm a')}
+                            {formatDate(consultation.date, 'h:mm a')}
                           </CardDescription>
                         </div>
                         <Badge variant="outline">Completed</Badge>
@@ -357,10 +351,10 @@ const ConsultationHistory: React.FC = () => {
                       <div className="flex justify-between items-center">
                         <div>
                           <CardTitle className="text-base">
-                            {safeFormat(consultation.date, 'MMMM d, yyyy')}
+                            {formatDate(consultation.date, 'MMMM d, yyyy')}
                           </CardTitle>
                           <CardDescription>
-                            {safeFormat(consultation.date, 'h:mm a')}
+                            {formatDate(consultation.date, 'h:mm a')}
                           </CardDescription>
                         </div>
                         <Badge variant="destructive">Cancelled</Badge>
