@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home } from 'lucide-react';
@@ -18,7 +18,7 @@ import { useConsultation } from '@/context/ConsultationContext';
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { resetBookingData } = useConsultation();
+  const { resetBookingData, pastConsultations } = useConsultation();
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Show back button only if not on home page
@@ -55,6 +55,9 @@ const Header: React.FC = () => {
     setDialogOpen(false);
   };
   
+  // History count for badge
+  const scheduledCount = pastConsultations.filter(c => c.status === 'scheduled').length;
+  
   return (
     <header className="w-full py-4 px-6 flex items-center justify-between border-b">
       <div className="flex items-center">
@@ -86,9 +89,14 @@ const Header: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={() => navigate('/history')}
-          className="text-health-primary hover:text-health-primary hover:bg-health-light"
+          className="text-health-primary hover:text-health-primary hover:bg-health-light relative"
         >
           View History
+          {scheduledCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-health-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {scheduledCount}
+            </span>
+          )}
         </Button>
       </div>
 

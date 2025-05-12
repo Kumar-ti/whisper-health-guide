@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
@@ -5,18 +6,30 @@ import { DayPicker } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  consultationDates?: Date[];
+};
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  consultationDates = [],
   ...props
 }: CalendarProps) {
+  // Function to check if a day has consultations
+  const hasConsultation = (day: Date) => {
+    return consultationDates.some(date => 
+      date.getFullYear() === day.getFullYear() &&
+      date.getMonth() === day.getMonth() &&
+      date.getDate() === day.getDate()
+    );
+  };
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 pointer-events-auto", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
@@ -37,7 +50,7 @@ function Calendar({
         cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative"
         ),
         day_range_end: "day-range-end",
         day_selected:
@@ -54,6 +67,19 @@ function Calendar({
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+        DayContent: (props) => {
+          const day = props.date;
+          const hasEvent = hasConsultation(day);
+          
+          return (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <div>{props.date.getDate()}</div>
+              {hasEvent && (
+                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 h-1 w-1 rounded-full bg-health-primary"></div>
+              )}
+            </div>
+          );
+        },
       }}
       {...props}
     />

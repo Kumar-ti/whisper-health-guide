@@ -58,7 +58,7 @@ interface ConsultationContextType {
   
   // Consultations history
   pastConsultations: Consultation[];
-  addConsultation: (consultation: Omit<Consultation, 'id'>) => void;
+  addConsultation: (consultation: Omit<Consultation, 'id'> & { id?: string }) => void;
   
   // Workflow
   resetBookingData: () => void;
@@ -135,13 +135,23 @@ export const ConsultationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setCurrentSymptoms([]);
   };
   
-  // Add a new consultation to history
-  const addConsultation = (consultation: Omit<Consultation, 'id'>) => {
-    const newConsultation = {
-      ...consultation,
-      id: crypto.randomUUID()
-    };
-    setPastConsultations([newConsultation, ...pastConsultations]);
+  // Add or update a consultation in history
+  const addConsultation = (consultation: Omit<Consultation, 'id'> & { id?: string }) => {
+    if (consultation.id) {
+      // Update existing consultation
+      setPastConsultations(currentConsultations => 
+        currentConsultations.map(c => 
+          c.id === consultation.id ? { ...consultation, id: consultation.id } as Consultation : c
+        )
+      );
+    } else {
+      // Add new consultation
+      const newConsultation = {
+        ...consultation,
+        id: crypto.randomUUID()
+      } as Consultation;
+      setPastConsultations([newConsultation, ...pastConsultations]);
+    }
     
     // In a real app, we would save this to a database or localStorage
     // associated with the anonymous ID
