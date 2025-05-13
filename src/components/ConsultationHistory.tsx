@@ -21,6 +21,7 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from '@/components/ui/use-toast';
 
 const ConsultationHistory: React.FC = () => {
   const navigate = useNavigate();
@@ -90,25 +91,43 @@ const ConsultationHistory: React.FC = () => {
   
   // Handle reschedule button click
   const handleReschedule = (consultationId: string) => {
-    setSelectedConsultation(consultationId);
-    setRescheduleDialogOpen(true);
-    
-    // Find the consultation to be rescheduled
     const consultation = pastConsultations.find(c => c.id === consultationId);
-    if (consultation) {
-      // Set the existing details in the context for the booking flow
-      // We need to find the actual doctor object from recommendedDoctors
-      const doctor = recommendedDoctors.find(d => d.id === consultation.doctorId);
-      if (doctor) {
-        setSelectedDoctor(doctor);
-      }
-      setSelectedMode(consultation.mode);
-      setReschedulingConsultationId(consultationId);
+    if (!consultation) {
+      toast({
+        title: "Error",
+        description: "Could not find consultation details.",
+        variant: "destructive"
+      });
+      return;
     }
-  };
-  
-  // Handle confirming reschedule
-  const confirmReschedule = () => {
+
+    // Set the consultation ID for rescheduling
+    setReschedulingConsultationId(consultationId);
+    
+    // Find and set the doctor
+    const doctor = recommendedDoctors.find(d => d.id === consultation.doctorId);
+    if (doctor) {
+      setSelectedDoctor(doctor);
+    }
+    
+    // Parse the existing consultation date
+    const consultationDate = new Date(consultation.date);
+    
+    // Set the date
+    setSelectedDate(format(consultationDate, 'yyyy-MM-dd'));
+    
+    // Format the time for the time picker
+    const hours = consultationDate.getHours();
+    const minutes = consultationDate.getMinutes();
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const formattedTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    setSelectedTime(formattedTime);
+    
+    // Set the consultation mode
+    setSelectedMode(consultation.mode);
+    
+    // Navigate to booking flow
     navigate('/booking');
   };
   
@@ -479,7 +498,12 @@ const ConsultationHistory: React.FC = () => {
             <Button 
               variant="default" 
               className="bg-health-primary hover:bg-health-dark"
-              onClick={confirmReschedule}
+              onClick={() => {
+                setRescheduleDialogOpen(false);
+                if (selectedConsultation) {
+                  handleReschedule(selectedConsultation);
+                }
+              }}
             >
               Continue to Reschedule
             </Button>

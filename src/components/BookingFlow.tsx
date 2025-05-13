@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -50,15 +50,50 @@ const BookingFlow: React.FC = () => {
     selectedMode, setSelectedMode,
     currentSymptoms,
     addConsultation,
-    reschedulingConsultationId
+    reschedulingConsultationId,
+    pastConsultations,
+    recommendedDoctors,
+    setSelectedDoctor
   } = useConsultation();
   
-  const [activeStep, setActiveStep] = useState('date'); // 'date', 'time', 'mode'
+  const [activeStep, setActiveStep] = useState('date');
   const [date, setDate] = useState<Date | undefined>(selectedDate ? new Date(selectedDate) : undefined);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Redirect if no doctor is selected
+  // Load doctor information if rescheduling
+  useEffect(() => {
+    if (reschedulingConsultationId && !selectedDoctor) {
+      const consultation = pastConsultations.find(c => c.id === reschedulingConsultationId);
+      if (consultation) {
+        const doctor = recommendedDoctors.find(d => d.id === consultation.doctorId);
+        if (doctor) {
+          setSelectedDoctor(doctor);
+        }
+      }
+    }
+    setIsLoading(false);
+  }, [reschedulingConsultationId, pastConsultations, recommendedDoctors, selectedDoctor, setSelectedDoctor]);
+  
+  // Handle navigation if no doctor is selected
+  useEffect(() => {
+    if (!isLoading && !selectedDoctor) {
+      navigate('/doctors');
+    }
+  }, [selectedDoctor, isLoading, navigate]);
+  
+  // Show loading state while checking doctor information
+  if (isLoading) {
+    return (
+      <div className="container px-4 py-10 mx-auto max-w-3xl">
+        <div className="text-center">
+          <p>Loading booking information...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If no doctor is selected after loading, return null (navigation will happen in useEffect)
   if (!selectedDoctor) {
-    navigate('/doctors');
     return null;
   }
   
