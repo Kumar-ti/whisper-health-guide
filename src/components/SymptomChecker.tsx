@@ -10,7 +10,7 @@ import { useConsultation } from '@/context/ConsultationContext';
 import { getCommonSymptoms, extractKeywords } from '@/utils/symptomMatching';
 
 // Chat message types
-type MessageType = 'bot' | 'user';
+type MessageType = 'bot' | 'user' | 'action';
 
 interface Message {
   type: MessageType;
@@ -65,10 +65,17 @@ const SymptomChecker: React.FC = () => {
         // For better UX, after second message with symptoms, suggest moving to recommendations
         if (messages.filter(m => m.type === 'user').length >= 1 || keywords.length >= 2) {
           setReadyForRecommendation(true);
-          setMessages(prev => [...prev, { 
-            type: 'bot', 
-            text: `I've identified these symptoms: ${keywords.join(', ')}. Based on your symptoms, I can recommend suitable doctors now.` 
-          }]);
+          setMessages(prev => [
+            ...prev,
+            { 
+              type: 'bot', 
+              text: `I've identified these symptoms: ${keywords.join(', ')}. Based on your symptoms, I can recommend suitable doctors now.` 
+            },
+            {
+              type: 'action',
+              text: 'view_doctors'
+            }
+          ]);
         } else {
           setMessages(prev => [...prev, { 
             type: 'bot', 
@@ -105,6 +112,13 @@ const SymptomChecker: React.FC = () => {
     // If this is the second symptom or more, suggest moving to doctor recommendations
     if (currentSymptoms.length >= 1) {
       setReadyForRecommendation(true);
+      setMessages(prev => [
+        ...prev,
+        {
+          type: 'action',
+          text: 'view_doctors'
+        }
+      ]);
     }
   };
   
@@ -138,9 +152,18 @@ const SymptomChecker: React.FC = () => {
           {messages.map((message, index) => (
             <div 
               key={index} 
-              className={`chat-message ${message.type === 'bot' ? 'bot-message' : 'user-message'}`}
+              className={`chat-message ${message.type === 'bot' ? 'bot-message' : message.type === 'user' ? 'user-message' : ''}`}
             >
-              {message.text}
+              {message.type === 'action' && message.text === 'view_doctors' ? (
+                <Button 
+                  onClick={handleFindDoctors} 
+                  className="bg-health-primary hover:bg-health-dark mt-2 w-full animate-pulse"
+                >
+                  View Recommended Doctors
+                </Button>
+              ) : (
+                message.text
+              )}
             </div>
           ))}
           {isProcessing && (
@@ -218,17 +241,6 @@ const SymptomChecker: React.FC = () => {
           size="icon"
         >
           <Send className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      {/* Find doctors button - shown conditionally when ready for recommendation */}
-      <div className="p-4 pt-0">
-        <Button 
-          onClick={handleFindDoctors} 
-          disabled={currentSymptoms.length === 0}
-          className={`w-full bg-health-primary hover:bg-health-dark ${readyForRecommendation ? 'animate-pulse' : ''}`}
-        >
-          {readyForRecommendation ? 'View Recommended Doctors' : 'Find Doctors'}
         </Button>
       </div>
     </div>

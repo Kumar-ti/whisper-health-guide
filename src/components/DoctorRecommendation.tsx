@@ -10,11 +10,14 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { matchSymptomsToSpecialties, SPECIALTIES_LIST } from '@/utils/symptomMatching';
-import { Filter, Star, MapPin } from 'lucide-react';
+import { Filter, Star, MapPin, ToggleLeft, ToggleRight } from 'lucide-react';
 
 const DoctorRecommendation: React.FC = () => {
   const navigate = useNavigate();
   const { currentSymptoms, recommendedDoctors, setSelectedDoctor } = useConsultation();
+  
+  // New state for view mode (recommended vs all)
+  const [viewMode, setViewMode] = useState<'recommended' | 'all'>('recommended');
   const [activeSpecialty, setActiveSpecialty] = useState<string>('all');
   
   // New state for filters
@@ -27,15 +30,24 @@ const DoctorRecommendation: React.FC = () => {
   // Match symptoms to specialties
   const matchedSpecialties = matchSymptomsToSpecialties(currentSymptoms);
   
-  // Apply all filters to doctors
-  const filteredDoctors = recommendedDoctors
-    .filter(doctor => activeSpecialty === 'all' || doctor.specialty === activeSpecialty)
-    .filter(doctor => !locationFilter || doctor.location?.includes(locationFilter))
-    .filter(doctor => doctor.rating >= ratingFilter);
+  // Get top matches (initially show only the top 3 best matching doctors)
+  const topMatchedDoctors = recommendedDoctors.slice(0, 3);
   
-  // Get top matches (initially show only 3 best matching doctors)
-  const topMatches = filteredDoctors.slice(0, 3);
-  const doctorsToShow = showAllDoctors ? filteredDoctors : topMatches;
+  // Apply all filters to doctors
+  const getFilteredDoctors = () => {
+    // Start with either all doctors or just the recommended ones
+    const baseList = viewMode === 'recommended' ? topMatchedDoctors : recommendedDoctors;
+    
+    return baseList
+      .filter(doctor => activeSpecialty === 'all' || doctor.specialty === activeSpecialty)
+      .filter(doctor => !locationFilter || doctor.location?.toLowerCase().includes(locationFilter.toLowerCase()))
+      .filter(doctor => doctor.rating >= ratingFilter);
+  };
+  
+  const filteredDoctors = getFilteredDoctors();
+  
+  // Get doctors to show based on "Show all" toggle
+  const doctorsToShow = showAllDoctors ? filteredDoctors : filteredDoctors.slice(0, 3);
   
   // If no symptoms have been entered, redirect to symptom checker
   if (currentSymptoms.length === 0) {
@@ -138,6 +150,32 @@ const DoctorRecommendation: React.FC = () => {
         )}
       </Card>
       
+      {/* View mode toggle: Recommended vs All */}
+      <Card className="mb-6">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-center">
+            <ToggleGroup type="single" value={viewMode} onValueChange={(val) => val && setViewMode(val as 'recommended' | 'all')}>
+              <ToggleGroupItem value="recommended" size="sm" className="flex items-center">
+                {viewMode === 'recommended' ? (
+                  <ToggleRight className="h-4 w-4 mr-2 text-health-primary" />
+                ) : (
+                  <ToggleLeft className="h-4 w-4 mr-2" />
+                )}
+                Recommended Doctors
+              </ToggleGroupItem>
+              <ToggleGroupItem value="all" size="sm" className="flex items-center">
+                {viewMode === 'all' ? (
+                  <ToggleRight className="h-4 w-4 mr-2 text-health-primary" />
+                ) : (
+                  <ToggleLeft className="h-4 w-4 mr-2" />
+                )}
+                All Doctors
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        </CardContent>
+      </Card>
+      
       {/* Specialty filter tabs */}
       <Tabs defaultValue="all" value={activeSpecialty} onValueChange={setActiveSpecialty} className="mb-6">
         <TabsList className="mb-4 overflow-x-auto flex-nowrap">
@@ -197,7 +235,11 @@ const DoctorRecommendation: React.FC = () => {
                           <div className="flex flex-wrap gap-2 text-muted-foreground">
                             <span>{doctor.experience} yrs exp</span>
                             <span className="px-1">•</span>
-                            <span>₹{(Math.floor(Math.random() * 10) + 3) * 100}/consultation</span>
+                            <span>₹{doctor.fee}/consultation</span>
+                          </div>
+                          <div className="flex items-center mt-1 text-muted-foreground">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            <span className="text-xs">{doctor.location}</span>
                           </div>
                         </div>
                       </div>
