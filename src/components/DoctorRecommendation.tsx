@@ -1,37 +1,53 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useConsultation } from '@/context/ConsultationContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { matchSymptomsToSpecialties, SPECIALTIES_LIST } from '@/utils/symptomMatching';
+import { Filter, Star, MapPin } from 'lucide-react';
 
 const DoctorRecommendation: React.FC = () => {
   const navigate = useNavigate();
   const { currentSymptoms, recommendedDoctors, setSelectedDoctor } = useConsultation();
   const [activeSpecialty, setActiveSpecialty] = useState<string>('all');
   
+  // New state for filters
+  const [showAllDoctors, setShowAllDoctors] = useState(false);
+  const [locationFilter, setLocationFilter] = useState<string>('');
+  const [costFilter, setCostFilter] = useState<[number]>([500]); // Default cost filter
+  const [ratingFilter, setRatingFilter] = useState<number>(4.0); // Default rating filter
+  const [showFilters, setShowFilters] = useState(false);
+  
   // Match symptoms to specialties
   const matchedSpecialties = matchSymptomsToSpecialties(currentSymptoms);
   
-  // Filter doctors by active specialty
-  const filteredDoctors = activeSpecialty === 'all' 
-    ? recommendedDoctors 
-    : recommendedDoctors.filter(doctor => doctor.specialty === activeSpecialty);
+  // Apply all filters to doctors
+  const filteredDoctors = recommendedDoctors
+    .filter(doctor => activeSpecialty === 'all' || doctor.specialty === activeSpecialty)
+    .filter(doctor => !locationFilter || doctor.location?.includes(locationFilter))
+    .filter(doctor => doctor.rating >= ratingFilter);
   
-  // Handle selecting a doctor
-  const handleSelectDoctor = (doctor: any) => {
-    setSelectedDoctor(doctor);
-    navigate('/booking');
-  };
+  // Get top matches (initially show only 3 best matching doctors)
+  const topMatches = filteredDoctors.slice(0, 3);
+  const doctorsToShow = showAllDoctors ? filteredDoctors : topMatches;
   
   // If no symptoms have been entered, redirect to symptom checker
   if (currentSymptoms.length === 0) {
     navigate('/');
     return null;
   }
+  
+  // Handle selecting a doctor
+  const handleSelectDoctor = (doctor: any) => {
+    setSelectedDoctor(doctor);
+    navigate('/booking');
+  };
   
   return (
     <div className="container px-4 py-6 mx-auto max-w-5xl">
@@ -51,6 +67,77 @@ const DoctorRecommendation: React.FC = () => {
         </p>
       </div>
       
+      {/* Filters section */}
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg flex items-center">
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-xs"
+            >
+              {showFilters ? 'Hide' : 'Show'}
+            </Button>
+          </div>
+        </CardHeader>
+        
+        {showFilters && (
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Location filter */}
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                <label htmlFor="location" className="text-sm font-medium">Location</label>
+              </div>
+              <Input
+                id="location"
+                placeholder="Enter pincode or area"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            
+            {/* Cost filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Consultation Fee</label>
+              <div className="pt-2">
+                <Slider
+                  defaultValue={costFilter}
+                  max={2000}
+                  step={100}
+                  onValueChange={(value) => setCostFilter(value as [number])}
+                />
+                <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                  <span>₹0</span>
+                  <span>₹{costFilter[0]}</span>
+                  <span>₹2000+</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Rating filter */}
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <Star className="h-4 w-4 mr-2 text-muted-foreground" />
+                <label className="text-sm font-medium">Minimum Rating</label>
+              </div>
+              <ToggleGroup type="single" value={ratingFilter.toString()} onValueChange={(val) => setRatingFilter(parseFloat(val))}>
+                <ToggleGroupItem value="3.0" size="sm">3+</ToggleGroupItem>
+                <ToggleGroupItem value="3.5" size="sm">3.5+</ToggleGroupItem>
+                <ToggleGroupItem value="4.0" size="sm">4+</ToggleGroupItem>
+                <ToggleGroupItem value="4.5" size="sm">4.5+</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+      
       {/* Specialty filter tabs */}
       <Tabs defaultValue="all" value={activeSpecialty} onValueChange={setActiveSpecialty} className="mb-6">
         <TabsList className="mb-4 overflow-x-auto flex-nowrap">
@@ -63,59 +150,82 @@ const DoctorRecommendation: React.FC = () => {
         </TabsList>
         
         <TabsContent value={activeSpecialty} className="mt-0">
-          {filteredDoctors.length === 0 ? (
+          {doctorsToShow.length === 0 ? (
             <div className="text-center py-10">
               <h3 className="text-lg font-medium mb-2">No doctors found</h3>
               <p className="text-muted-foreground mb-4">
                 We couldn't find any doctors matching these criteria.
               </p>
-              <Button onClick={() => setActiveSpecialty('all')}>
-                View all doctors
+              <Button onClick={() => {
+                setActiveSpecialty('all');
+                setLocationFilter('');
+                setCostFilter([500]);
+                setRatingFilter(4.0);
+              }}>
+                Reset filters
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredDoctors.map((doctor) => (
-                <Card key={doctor.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                        <CardDescription>{doctor.specialty}</CardDescription>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {doctorsToShow.map((doctor) => (
+                  <Card key={doctor.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg">{doctor.name}</CardTitle>
+                          <CardDescription>{doctor.specialty}</CardDescription>
+                        </div>
+                        <div className="flex items-center bg-health-light rounded-md px-2 py-1">
+                          <span className="text-health-primary font-semibold text-sm">
+                            {doctor.rating}★
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center bg-health-light rounded-md px-2 py-1">
-                        <span className="text-health-primary font-semibold text-sm">
-                          {doctor.rating}★
-                        </span>
+                    </CardHeader>
+                    <CardContent className="pb-2">
+                      <div className="flex items-center mb-2 gap-4">
+                        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                          <img
+                            src={doctor.image}
+                            alt={doctor.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="text-sm">
+                          <p className="mb-1">{doctor.bio}</p>
+                          <div className="flex flex-wrap gap-2 text-muted-foreground">
+                            <span>{doctor.experience} yrs exp</span>
+                            <span className="px-1">•</span>
+                            <span>₹{(Math.floor(Math.random() * 10) + 3) * 100}/consultation</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="flex items-center mb-2 gap-4">
-                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                        <img
-                          src={doctor.image}
-                          alt={doctor.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="text-sm">
-                        <p className="mb-1">{doctor.bio}</p>
-                        <p className="text-muted-foreground">{doctor.experience} years experience</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      onClick={() => handleSelectDoctor(doctor)}
-                      className="w-full bg-health-primary hover:bg-health-dark"
-                    >
-                      Book Consultation
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button 
+                        onClick={() => handleSelectDoctor(doctor)}
+                        className="w-full bg-health-primary hover:bg-health-dark"
+                      >
+                        Book Consultation
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+              
+              {/* Show more button when there are more doctors available */}
+              {!showAllDoctors && filteredDoctors.length > 3 && (
+                <div className="text-center mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowAllDoctors(true)}
+                  >
+                    Show all {filteredDoctors.length} doctors
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>

@@ -29,6 +29,7 @@ const SymptomChecker: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [suggestedSymptoms, setSuggestedSymptoms] = useState<string[]>([]);
+  const [readyForRecommendation, setReadyForRecommendation] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Load common symptoms for suggestions
@@ -51,7 +52,7 @@ const SymptomChecker: React.FC = () => {
     setInputValue('');
     setIsProcessing(true);
     
-    // Extract symptoms from user input
+    // Extract symptoms from user input with more comprehensive analysis
     setTimeout(() => {
       const keywords = extractKeywords(userMessage);
       
@@ -61,15 +62,24 @@ const SymptomChecker: React.FC = () => {
           addSymptom(keyword);
         });
         
-        setMessages(prev => [...prev, { 
-          type: 'bot', 
-          text: `I've identified these symptoms: ${keywords.join(', ')}. Anything else you'd like to add?` 
-        }]);
+        // For better UX, after second message with symptoms, suggest moving to recommendations
+        if (messages.filter(m => m.type === 'user').length >= 1 || keywords.length >= 2) {
+          setReadyForRecommendation(true);
+          setMessages(prev => [...prev, { 
+            type: 'bot', 
+            text: `I've identified these symptoms: ${keywords.join(', ')}. Based on your symptoms, I can recommend suitable doctors now.` 
+          }]);
+        } else {
+          setMessages(prev => [...prev, { 
+            type: 'bot', 
+            text: `I've identified these symptoms: ${keywords.join(', ')}. Could you tell me more about how you're feeling?` 
+          }]);
+        }
       } else {
         // No keywords found, ask for more specific symptoms
         setMessages(prev => [...prev, { 
           type: 'bot', 
-          text: 'I need some more specific information about your symptoms. Could you provide more details?' 
+          text: 'I need some more specific information about your symptoms. Could you provide more details about what you\'re experiencing?' 
         }]);
       }
       
@@ -91,6 +101,11 @@ const SymptomChecker: React.FC = () => {
     
     // Update suggested symptoms (remove the one selected)
     setSuggestedSymptoms(prev => prev.filter(s => s !== symptom));
+    
+    // If this is the second symptom or more, suggest moving to doctor recommendations
+    if (currentSymptoms.length >= 1) {
+      setReadyForRecommendation(true);
+    }
   };
   
   // Handle finding doctors
@@ -113,6 +128,7 @@ const SymptomChecker: React.FC = () => {
     clearSymptoms();
     setMessages([{ type: 'bot', text: 'I\'ve cleared your symptoms. Could you describe your symptoms again?' }]);
     setSuggestedSymptoms(getCommonSymptoms().slice(0, 5));
+    setReadyForRecommendation(false);
   };
   
   return (
@@ -205,14 +221,14 @@ const SymptomChecker: React.FC = () => {
         </Button>
       </div>
       
-      {/* Find doctors button */}
+      {/* Find doctors button - shown conditionally when ready for recommendation */}
       <div className="p-4 pt-0">
         <Button 
           onClick={handleFindDoctors} 
           disabled={currentSymptoms.length === 0}
-          className="w-full bg-health-primary hover:bg-health-dark"
+          className={`w-full bg-health-primary hover:bg-health-dark ${readyForRecommendation ? 'animate-pulse' : ''}`}
         >
-          Find Recommended Doctors
+          {readyForRecommendation ? 'View Recommended Doctors' : 'Find Doctors'}
         </Button>
       </div>
     </div>
