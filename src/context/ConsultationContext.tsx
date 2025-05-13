@@ -110,19 +110,31 @@ export const ConsultationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Rescheduling consultation ID
   const [reschedulingConsultationId, setReschedulingConsultationId] = useState<string | null>(null);
   
-  // Initialize anonymous ID on component mount
+  // Load consultations from localStorage on mount
   useEffect(() => {
     const storedId = getAnonymousToken();
     if (storedId) {
       setAnonymousId(storedId);
-      // Here we would typically fetch past consultations using this ID
-      // For now, this will be simulated with mock data
+      // Load stored consultations
+      const storedConsultations = localStorage.getItem(`consultations_${storedId}`);
+      if (storedConsultations) {
+        console.log('Loading consultations from localStorage:', JSON.parse(storedConsultations));
+        setPastConsultations(JSON.parse(storedConsultations));
+      }
     } else {
       const newId = crypto.randomUUID();
       saveAnonymousToken(newId);
       setAnonymousId(newId);
     }
   }, []);
+  
+  // Save consultations to localStorage whenever they change
+  useEffect(() => {
+    if (anonymousId) {
+      console.log('Saving consultations to localStorage:', pastConsultations);
+      localStorage.setItem(`consultations_${anonymousId}`, JSON.stringify(pastConsultations));
+    }
+  }, [pastConsultations, anonymousId]);
   
   // Add a symptom to the current list
   const addSymptom = (symptom: string) => {
@@ -157,22 +169,30 @@ export const ConsultationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       if (consultation.id) {
         // Update existing consultation
-        setPastConsultations(currentConsultations => 
-          currentConsultations.map(c => 
+        setPastConsultations(currentConsultations => {
+          console.log('Updating consultation. Current consultations:', currentConsultations);
+          const updatedConsultations = currentConsultations.map(c => 
             c.id === consultation.id ? { ...formattedConsultation, id: consultation.id } as Consultation : c
-          )
-        );
+          );
+          console.log('Updated consultations:', updatedConsultations);
+          return updatedConsultations;
+        });
       } else {
         // Add new consultation
         const newConsultation = {
           ...formattedConsultation,
           id: crypto.randomUUID()
         } as Consultation;
-        setPastConsultations([newConsultation, ...pastConsultations]);
+        console.log('Adding new consultation:', newConsultation);
+        setPastConsultations(currentConsultations => {
+          console.log('Current consultations before adding:', currentConsultations);
+          const updatedConsultations = [newConsultation, ...currentConsultations];
+          console.log('Updated consultations after adding:', updatedConsultations);
+          return updatedConsultations;
+        });
       }
     } catch (error) {
       console.error('Error adding consultation:', error);
-      // You might want to show a toast or error message to the user here
     }
   };
   

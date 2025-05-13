@@ -96,9 +96,19 @@ const BookingFlow: React.FC = () => {
     }
     
     // Create a proper ISO date string by combining date and time
-    const [hours, minutes] = selectedTime.split(':');
     const bookingDate = new Date(selectedDate);
-    bookingDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+    const [time, period] = selectedTime.split(' ');
+    const [hours, minutes] = time.split(':');
+    let hour = parseInt(hours, 10);
+    
+    // Convert to 24-hour format
+    if (period === 'PM' && hour !== 12) {
+      hour += 12;
+    } else if (period === 'AM' && hour === 12) {
+      hour = 0;
+    }
+    
+    bookingDate.setHours(hour, parseInt(minutes, 10), 0, 0);
     
     // Add or update the consultation
     addConsultation({
