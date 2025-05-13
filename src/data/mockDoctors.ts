@@ -1,14 +1,29 @@
+import { generalTimeSlots, generateRandomAvailability } from './timeSlots';
 
-const mockDoctors = [
+// Define the doctor type
+type Doctor = {
+  id: string;
+  name: string;
+  specialty: string;
+  experience: number;
+  rating: number;
+  image: string;
+  bio: string;
+  availabilityIndices: number[];
+  availability: string[];
+};
+
+const mockDoctors: Doctor[] = [
   {
     id: "dr-smith",
     name: "Dr. Sarah Smith",
     specialty: "Dermatology",
     experience: 12,
     rating: 4.8,
-    image: "/placeholder.svg", // Using placeholder from public
+    image: "/placeholder.svg",
     bio: "Dr. Smith specializes in treating skin conditions and has expertise in cosmetic dermatology.",
-    availability: ["9:00 AM", "10:00 AM", "2:00 PM", "3:00 PM", "4:00 PM"]
+    availabilityIndices: generateRandomAvailability(5),
+    get availability() { return this.availabilityIndices.map(index => generalTimeSlots[index]); }
   },
   {
     id: "dr-johnson",
@@ -18,7 +33,8 @@ const mockDoctors = [
     rating: 4.9,
     image: "/placeholder.svg",
     bio: "Dr. Johnson is an experienced ENT specialist focused on both surgical and non-surgical treatments.",
-    availability: ["8:00 AM", "11:00 AM", "1:00 PM", "5:00 PM"]
+    availabilityIndices: generateRandomAvailability(4),
+    get availability() { return this.availabilityIndices.map(index => generalTimeSlots[index]); }
   },
   {
     id: "dr-patel",
@@ -28,7 +44,8 @@ const mockDoctors = [
     rating: 4.7,
     image: "/placeholder.svg",
     bio: "Dr. Patel provides comprehensive primary care services for patients of all ages.",
-    availability: ["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "4:00 PM"]
+    availabilityIndices: generateRandomAvailability(6),
+    get availability() { return this.availabilityIndices.map(index => generalTimeSlots[index]); }
   },
   {
     id: "dr-garcia",
@@ -38,7 +55,8 @@ const mockDoctors = [
     rating: 4.9,
     image: "/placeholder.svg",
     bio: "Dr. Garcia specializes in sports injuries and joint replacements.",
-    availability: ["8:00 AM", "9:00 AM", "3:00 PM", "4:00 PM"]
+    availabilityIndices: generateRandomAvailability(4),
+    get availability() { return this.availabilityIndices.map(index => generalTimeSlots[index]); }
   },
   {
     id: "dr-chen",
@@ -48,7 +66,8 @@ const mockDoctors = [
     rating: 4.8,
     image: "/placeholder.svg",
     bio: "Dr. Chen is a board-certified cardiologist focused on preventive cardiology.",
-    availability: ["10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM"]
+    availabilityIndices: generateRandomAvailability(4),
+    get availability() { return this.availabilityIndices.map(index => generalTimeSlots[index]); }
   },
   {
     id: "dr-williams",
@@ -58,7 +77,9 @@ const mockDoctors = [
     rating: 4.6,
     image: "/placeholder.svg",
     bio: "Dr. Williams specializes in headaches, migraines, and neurological disorders.",
-    availability: ["9:00 AM", "1:00 PM", "2:00 PM", "5:00 PM"]
+    //availabilityIndices: generateRandomAvailability(4),
+    availabilityIndices: [0, 1, 2, 3,4,5,6],
+    get availability() { return this.availabilityIndices.map(index => generalTimeSlots[index]); }
   },
   {
     id: "dr-kim",
@@ -68,7 +89,9 @@ const mockDoctors = [
     rating: 4.7,
     image: "/placeholder.svg",
     bio: "Dr. Kim focuses on anxiety disorders, depression, and sleep issues.",
-    availability: ["10:00 AM", "11:00 AM", "3:00 PM", "4:00 PM"]
+    //availabilityIndices: generateRandomAvailability(4),
+    availabilityIndices: [0, 1, 2, 3,4,5,6],
+    get availability() { return this.availabilityIndices.map(index => generalTimeSlots[index]); }
   }
 ];
 
