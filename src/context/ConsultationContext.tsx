@@ -58,6 +58,8 @@ interface ConsultationContextType {
   // Consultations history
   pastConsultations: Consultation[];
   addConsultation: (consultation: Omit<Consultation, 'id'> & { id?: string }) => void;
+  reschedulingConsultationId: string | null;
+  setReschedulingConsultationId: (id: string | null) => void;
   
   // Workflow
   resetBookingData: () => void;
@@ -81,6 +83,8 @@ const ConsultationContext = createContext<ConsultationContextType>({
   setSelectedMode: () => {},
   pastConsultations: [],
   addConsultation: () => {},
+  reschedulingConsultationId: null,
+  setReschedulingConsultationId: () => {},
   resetBookingData: () => {},
 });
 
@@ -102,6 +106,9 @@ export const ConsultationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   
   // Consultations history
   const [pastConsultations, setPastConsultations] = useState<Consultation[]>([]);
+  
+  // Rescheduling consultation ID
+  const [reschedulingConsultationId, setReschedulingConsultationId] = useState<string | null>(null);
   
   // Initialize anonymous ID on component mount
   useEffect(() => {
@@ -175,6 +182,7 @@ export const ConsultationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setSelectedDate(null);
     setSelectedTime(null);
     setSelectedMode(null);
+    setReschedulingConsultationId(null);
   };
   
   // Update recommended doctors whenever symptoms change
@@ -212,6 +220,8 @@ export const ConsultationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setSelectedMode,
         pastConsultations,
         addConsultation,
+        reschedulingConsultationId,
+        setReschedulingConsultationId,
         resetBookingData
       }}
     >

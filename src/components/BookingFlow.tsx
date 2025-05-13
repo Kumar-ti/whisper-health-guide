@@ -49,7 +49,8 @@ const BookingFlow: React.FC = () => {
     selectedTime, setSelectedTime,
     selectedMode, setSelectedMode,
     currentSymptoms,
-    addConsultation
+    addConsultation,
+    reschedulingConsultationId
   } = useConsultation();
   
   const [activeStep, setActiveStep] = useState('date'); // 'date', 'time', 'mode'
@@ -99,8 +100,9 @@ const BookingFlow: React.FC = () => {
     const bookingDate = new Date(selectedDate);
     bookingDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
     
-    // Add the consultation to history
+    // Add or update the consultation
     addConsultation({
+      id: reschedulingConsultationId, // This will update the existing consultation if rescheduling
       date: bookingDate.toISOString(),
       doctorId: selectedDoctor.id,
       symptoms: currentSymptoms,
@@ -110,7 +112,7 @@ const BookingFlow: React.FC = () => {
     
     // Show success message
     toast({
-      title: "Consultation Booked!",
+      title: reschedulingConsultationId ? "Consultation Rescheduled!" : "Consultation Booked!",
       description: `Your appointment with ${selectedDoctor.name} is confirmed.`,
     });
     

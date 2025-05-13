@@ -25,7 +25,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const ConsultationHistory: React.FC = () => {
   const navigate = useNavigate();
   const { pastConsultations, selectedDate, selectedTime, selectedMode, selectedDoctor, 
-    addConsultation, setSelectedDate, setSelectedTime, setSelectedMode, setSelectedDoctor, recommendedDoctors } = useConsultation();
+    addConsultation, setSelectedDate, setSelectedTime, setSelectedMode, setSelectedDoctor, 
+    recommendedDoctors, setReschedulingConsultationId } = useConsultation();
   
   // States for UI elements
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -102,6 +103,7 @@ const ConsultationHistory: React.FC = () => {
         setSelectedDoctor(doctor);
       }
       setSelectedMode(consultation.mode);
+      setReschedulingConsultationId(consultationId);
     }
   };
   
