@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Lock, MessageCircle } from 'lucide-react';
+import { Shield, Lock, MessageCircle, Stethoscope } from 'lucide-react';
 import SymptomChecker from '@/components/SymptomChecker';
 
 const Index = () => {
@@ -13,13 +12,13 @@ const Index = () => {
   return (
     <div className="container px-4 py-2 mx-auto">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <Badge className="mb-2 bg-health-light text-health-primary border-health-primary">No Login Required</Badge>
           <h1 className="text-4xl font-bold text-health-dark mb-4">Private Healthcare Made Simple</h1>
           <p className="text-xl text-muted-foreground mb-6">
             Get connected to healthcare professionals quickly and anonymously without creating an account.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-4">
             <Button 
               onClick={() => navigate('/history')}
               variant="outline" 
@@ -32,6 +31,16 @@ const Index = () => {
               variant="outline"
             >
               Privacy Policy
+            </Button>
+          </div>
+          <div className="flex justify-center mb-8">
+            <Button 
+              onClick={() => navigate('/doctor-login')}
+              variant="default"
+              className="bg-health-primary hover:bg-health-primary/90"
+            >
+              <Stethoscope className="h-4 w-4 mr-2" />
+              Doctor Login
             </Button>
           </div>
         </div>
