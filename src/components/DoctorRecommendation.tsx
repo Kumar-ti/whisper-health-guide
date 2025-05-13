@@ -16,12 +16,11 @@ const DoctorRecommendation: React.FC = () => {
   const navigate = useNavigate();
   const { currentSymptoms, recommendedDoctors, setSelectedDoctor } = useConsultation();
   
-  // New state for view mode (recommended vs all)
+  // View mode (recommended vs all)
   const [viewMode, setViewMode] = useState<'recommended' | 'all'>('recommended');
   const [activeSpecialty, setActiveSpecialty] = useState<string>('all');
   
-  // New state for filters
-  const [showAllDoctors, setShowAllDoctors] = useState(false);
+  // Filters state
   const [locationFilter, setLocationFilter] = useState<string>('');
   const [costFilter, setCostFilter] = useState<[number]>([500]); // Default cost filter
   const [ratingFilter, setRatingFilter] = useState<number>(4.0); // Default rating filter
@@ -31,23 +30,24 @@ const DoctorRecommendation: React.FC = () => {
   const matchedSpecialties = matchSymptomsToSpecialties(currentSymptoms);
   
   // Get top matches (initially show only the top 3 best matching doctors)
-  const topMatchedDoctors = recommendedDoctors.slice(0, 3);
+  const topMatchedDoctors = recommendedDoctors
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 3);
   
   // Apply all filters to doctors
   const getFilteredDoctors = () => {
-    // Start with either all doctors or just the recommended ones
+    // Start with either recommended or all doctors
     const baseList = viewMode === 'recommended' ? topMatchedDoctors : recommendedDoctors;
     
     return baseList
       .filter(doctor => activeSpecialty === 'all' || doctor.specialty === activeSpecialty)
-      .filter(doctor => !locationFilter || doctor.location?.toLowerCase().includes(locationFilter.toLowerCase()))
+      .filter(doctor => !locationFilter || 
+        (doctor.location && doctor.location.toLowerCase().includes(locationFilter.toLowerCase())))
+      .filter(doctor => doctor.fee <= costFilter[0])
       .filter(doctor => doctor.rating >= ratingFilter);
   };
   
   const filteredDoctors = getFilteredDoctors();
-  
-  // Get doctors to show based on "Show all" toggle
-  const doctorsToShow = showAllDoctors ? filteredDoctors : filteredDoctors.slice(0, 3);
   
   // If no symptoms have been entered, redirect to symptom checker
   if (currentSymptoms.length === 0) {
@@ -139,7 +139,7 @@ const DoctorRecommendation: React.FC = () => {
                 <Star className="h-4 w-4 mr-2 text-muted-foreground" />
                 <label className="text-sm font-medium">Minimum Rating</label>
               </div>
-              <ToggleGroup type="single" value={ratingFilter.toString()} onValueChange={(val) => setRatingFilter(parseFloat(val))}>
+              <ToggleGroup type="single" value={ratingFilter.toString()} onValueChange={(val) => val && setRatingFilter(parseFloat(val))}>
                 <ToggleGroupItem value="3.0" size="sm">3+</ToggleGroupItem>
                 <ToggleGroupItem value="3.5" size="sm">3.5+</ToggleGroupItem>
                 <ToggleGroupItem value="4.0" size="sm">4+</ToggleGroupItem>
@@ -150,45 +150,52 @@ const DoctorRecommendation: React.FC = () => {
         )}
       </Card>
       
-      {/* View mode toggle: Recommended vs All */}
-      <Card className="mb-6">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-center">
-            <ToggleGroup type="single" value={viewMode} onValueChange={(val) => val && setViewMode(val as 'recommended' | 'all')}>
-              <ToggleGroupItem value="recommended" size="sm" className="flex items-center">
-                {viewMode === 'recommended' ? (
-                  <ToggleRight className="h-4 w-4 mr-2 text-health-primary" />
-                ) : (
-                  <ToggleLeft className="h-4 w-4 mr-2" />
-                )}
-                Recommended Doctors
-              </ToggleGroupItem>
-              <ToggleGroupItem value="all" size="sm" className="flex items-center">
-                {viewMode === 'all' ? (
-                  <ToggleRight className="h-4 w-4 mr-2 text-health-primary" />
-                ) : (
-                  <ToggleLeft className="h-4 w-4 mr-2" />
-                )}
-                All Doctors
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Specialty filter tabs */}
-      <Tabs defaultValue="all" value={activeSpecialty} onValueChange={setActiveSpecialty} className="mb-6">
-        <TabsList className="mb-4 overflow-x-auto flex-nowrap">
-          <TabsTrigger value="all">All Specialists</TabsTrigger>
-          {matchedSpecialties.map((specialty, index) => (
-            <TabsTrigger key={index} value={specialty}>
-              {specialty}
-            </TabsTrigger>
-          ))}
+      {/* Primary Tabs: View Modes and Specialties */}
+      <Tabs className="mb-6">
+        {/* View Mode Toggle: Recommended vs All */}
+        <TabsList className="mb-4 w-full overflow-x-auto flex space-x-2">
+          <TabsTrigger 
+            value="recommended" 
+            onClick={() => setViewMode('recommended')}
+            className={viewMode === 'recommended' ? 'bg-health-primary text-white' : ''}
+          >
+            Recommended Doctors
+          </TabsTrigger>
+          <TabsTrigger 
+            value="all" 
+            onClick={() => setViewMode('all')}
+            className={viewMode === 'all' ? 'bg-health-primary text-white' : ''}
+          >
+            All Doctors
+          </TabsTrigger>
+          
+          {/* Specialty filters */}
+          {viewMode === 'all' && (
+            <>
+              <TabsTrigger 
+                value="all-specialties" 
+                onClick={() => setActiveSpecialty('all')}
+                className={activeSpecialty === 'all' ? 'bg-health-primary text-white' : ''}
+              >
+                All Specialists
+              </TabsTrigger>
+              {matchedSpecialties.map((specialty, index) => (
+                <TabsTrigger 
+                  key={index} 
+                  value={specialty}
+                  onClick={() => setActiveSpecialty(specialty)}
+                  className={activeSpecialty === specialty ? 'bg-health-primary text-white' : ''}
+                >
+                  {specialty}
+                </TabsTrigger>
+              ))}
+            </>
+          )}
         </TabsList>
         
-        <TabsContent value={activeSpecialty} className="mt-0">
-          {doctorsToShow.length === 0 ? (
+        {/* Doctor Lists */}
+        <div className="mt-4">
+          {filteredDoctors.length === 0 ? (
             <div className="text-center py-10">
               <h3 className="text-lg font-medium mb-2">No doctors found</h3>
               <p className="text-muted-foreground mb-4">
@@ -204,72 +211,58 @@ const DoctorRecommendation: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {doctorsToShow.map((doctor) => (
-                  <Card key={doctor.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                          <CardDescription>{doctor.specialty}</CardDescription>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredDoctors.map((doctor) => (
+                <Card key={doctor.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{doctor.name}</CardTitle>
+                        <CardDescription>{doctor.specialty}</CardDescription>
+                      </div>
+                      <div className="flex items-center bg-health-light rounded-md px-2 py-1">
+                        <span className="text-health-primary font-semibold text-sm">
+                          {doctor.rating}★
+                        </span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <div className="flex items-center mb-2 gap-4">
+                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                        <img
+                          src={doctor.image}
+                          alt={doctor.name}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="text-sm">
+                        <p className="mb-1">{doctor.bio}</p>
+                        <div className="flex flex-wrap gap-2 text-muted-foreground">
+                          <span>{doctor.experience} yrs exp</span>
+                          <span className="px-1">•</span>
+                          <span>₹{doctor.fee}/consultation</span>
                         </div>
-                        <div className="flex items-center bg-health-light rounded-md px-2 py-1">
-                          <span className="text-health-primary font-semibold text-sm">
-                            {doctor.rating}★
-                          </span>
+                        <div className="flex items-center mt-1 text-muted-foreground">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          <span className="text-xs">{doctor.location}</span>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="pb-2">
-                      <div className="flex items-center mb-2 gap-4">
-                        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                          <img
-                            src={doctor.image}
-                            alt={doctor.name}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div className="text-sm">
-                          <p className="mb-1">{doctor.bio}</p>
-                          <div className="flex flex-wrap gap-2 text-muted-foreground">
-                            <span>{doctor.experience} yrs exp</span>
-                            <span className="px-1">•</span>
-                            <span>₹{doctor.fee}/consultation</span>
-                          </div>
-                          <div className="flex items-center mt-1 text-muted-foreground">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            <span className="text-xs">{doctor.location}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      <Button 
-                        onClick={() => handleSelectDoctor(doctor)}
-                        className="w-full bg-health-primary hover:bg-health-dark"
-                      >
-                        Book Consultation
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-              
-              {/* Show more button when there are more doctors available */}
-              {!showAllDoctors && filteredDoctors.length > 3 && (
-                <div className="text-center mt-6">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowAllDoctors(true)}
-                  >
-                    Show all {filteredDoctors.length} doctors
-                  </Button>
-                </div>
-              )}
-            </>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      onClick={() => handleSelectDoctor(doctor)}
+                      className="w-full bg-health-primary hover:bg-health-dark"
+                    >
+                      Book Consultation
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
           )}
-        </TabsContent>
+        </div>
       </Tabs>
       
       <div className="text-center mt-6">
