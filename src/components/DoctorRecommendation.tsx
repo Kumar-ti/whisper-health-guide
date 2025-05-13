@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -21,7 +22,7 @@ const DoctorRecommendation: React.FC = () => {
   
   // Filter states
   const [locationFilter, setLocationFilter] = useState<string>('');
-  const [costFilter, setCostFilter] = useState<[number]>([2000]); // Updated to max value of 2000 instead of 500
+  const [costFilter, setCostFilter] = useState<[number]>([500]); // Default cost filter
   const [ratingFilter, setRatingFilter] = useState<number>(4.0); // Default rating filter
   const [showFilters, setShowFilters] = useState(false);
   
@@ -49,7 +50,7 @@ const DoctorRecommendation: React.FC = () => {
   const resetFilters = () => {
     setActiveSpecialty('all');
     setLocationFilter('');
-    setCostFilter([2000]); // Reset to the max value of 2000
+    setCostFilter([500]);
     setRatingFilter(4.0);
   };
   
