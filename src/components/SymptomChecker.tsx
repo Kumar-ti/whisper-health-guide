@@ -37,15 +37,6 @@ const SymptomChecker: React.FC = () => {
     setSuggestedSymptoms(getCommonSymptoms().slice(0, 5));
   }, []);
   
-  // Check if we have enough symptoms to show recommendation button
-  useEffect(() => {
-    if (currentSymptoms.length >= 3) {
-      setReadyForRecommendation(true);
-    } else {
-      setReadyForRecommendation(false);
-    }
-  }, [currentSymptoms]);
-  
   // Scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,10 +62,9 @@ const SymptomChecker: React.FC = () => {
           addSymptom(keyword);
         });
         
-        // Update messages based on total symptoms count
-        const updatedSymptomCount = [...currentSymptoms, ...keywords.filter(k => !currentSymptoms.includes(k))].length;
-        
-        if (updatedSymptomCount >= 3) {
+        // For better UX, after second message with symptoms, suggest moving to recommendations
+        if (messages.filter(m => m.type === 'user').length >= 1 || keywords.length >= 2) {
+          setReadyForRecommendation(true);
           setMessages(prev => [
             ...prev,
             { 
@@ -87,15 +77,10 @@ const SymptomChecker: React.FC = () => {
             }
           ]);
         } else {
-          // We need more symptoms
-          const remainingSymptoms = 3 - updatedSymptomCount;
-          setMessages(prev => [
-            ...prev, 
-            { 
-              type: 'bot', 
-              text: `I've identified these symptoms: ${keywords.join(', ')}. To provide accurate doctor recommendations, I need ${remainingSymptoms} more symptom${remainingSymptoms > 1 ? 's' : ''}. Could you tell me more about how you're feeling?` 
-            }
-          ]);
+          setMessages(prev => [...prev, { 
+            type: 'bot', 
+            text: `I've identified these symptoms: ${keywords.join(', ')}. Could you tell me more about how you're feeling?` 
+          }]);
         }
       } else {
         // No keywords found, ask for more specific symptoms
@@ -118,33 +103,20 @@ const SymptomChecker: React.FC = () => {
     setMessages(prev => [
       ...prev, 
       { type: 'user', text: `I have ${symptom}` },
-      { type: 'bot', text: `Got it, I've added ${symptom} to your symptoms.` }
+      { type: 'bot', text: `Got it, I've added ${symptom} to your symptoms. Anything else?` }
     ]);
     
     // Update suggested symptoms (remove the one selected)
     setSuggestedSymptoms(prev => prev.filter(s => s !== symptom));
     
-    // Check if we have enough symptoms now
-    if (currentSymptoms.length + 1 >= 3) {  // +1 because the current symptom might not be in state yet
+    // If this is the second symptom or more, suggest moving to doctor recommendations
+    if (currentSymptoms.length >= 1) {
+      setReadyForRecommendation(true);
       setMessages(prev => [
         ...prev,
-        { 
-          type: 'bot', 
-          text: 'Great! I now have enough information to recommend suitable doctors for you.'
-        },
         {
           type: 'action',
           text: 'view_doctors'
-        }
-      ]);
-    } else {
-      // We need more symptoms
-      const remainingSymptoms = 3 - (currentSymptoms.length + 1);
-      setMessages(prev => [
-        ...prev,
-        { 
-          type: 'bot', 
-          text: `I need ${remainingSymptoms} more symptom${remainingSymptoms > 1 ? 's' : ''} to provide accurate doctor recommendations. Any other symptoms you're experiencing?`
         }
       ]);
     }
@@ -152,10 +124,10 @@ const SymptomChecker: React.FC = () => {
   
   // Handle finding doctors
   const handleFindDoctors = () => {
-    if (currentSymptoms.length < 3) {
+    if (currentSymptoms.length === 0) {
       toast({
-        title: "Not enough symptoms",
-        description: "Please describe at least 3 symptoms so we can recommend the right doctors.",
+        title: "No symptoms added",
+        description: "Please describe your symptoms first so we can recommend doctors.",
         variant: "destructive"
       });
       return;
@@ -168,7 +140,7 @@ const SymptomChecker: React.FC = () => {
   // Handle clearing symptoms
   const handleClearSymptoms = () => {
     clearSymptoms();
-    setMessages([{ type: 'bot', text: 'I\'ve cleared your symptoms. Could you describe your symptoms again? I\'ll need at least 3 symptoms to recommend doctors.' }]);
+    setMessages([{ type: 'bot', text: 'I\'ve cleared your symptoms. Could you describe your symptoms again?' }]);
     setSuggestedSymptoms(getCommonSymptoms().slice(0, 5));
     setReadyForRecommendation(false);
   };
@@ -182,10 +154,10 @@ const SymptomChecker: React.FC = () => {
               key={index} 
               className={`chat-message ${message.type === 'bot' ? 'bot-message' : message.type === 'user' ? 'user-message' : ''}`}
             >
-              {message.type === 'action' && message.text === 'view_doctors' && readyForRecommendation ? (
+              {message.type === 'action' && message.text === 'view_doctors' ? (
                 <Button 
                   onClick={handleFindDoctors} 
-                  className="bg-health-primary hover:bg-health-dark mt-2 w-full"
+                  className="bg-health-primary hover:bg-health-dark mt-2 w-full animate-pulse"
                 >
                   View Recommended Doctors
                 </Button>
@@ -232,7 +204,7 @@ const SymptomChecker: React.FC = () => {
       {currentSymptoms.length > 0 && (
         <Card className="mx-4 my-2 p-3 bg-health-light border border-health-primary">
           <div className="flex justify-between items-center mb-2">
-            <h4 className="text-sm font-medium">Your symptoms ({currentSymptoms.length}/3 required):</h4>
+            <h4 className="text-sm font-medium">Your symptoms:</h4>
             <Button variant="ghost" size="sm" onClick={handleClearSymptoms} className="h-6 text-xs">
               Clear all
             </Button>
