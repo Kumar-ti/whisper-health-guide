@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { getAnonymousToken, saveAnonymousToken } from '../utils/localStorage';
+import { Doctor as MockDoctor } from '../data/mockDoctors';
 
 // Define types for our context
 type ConsultationMode = 'audio' | 'video' | 'whatsapp' | 'in-person';
@@ -10,6 +11,7 @@ type Symptom = {
   specialty: string[];
 };
 
+// Update Doctor type to match the one in mockDoctors.ts
 type Doctor = {
   id: string;
   name: string;
@@ -18,6 +20,8 @@ type Doctor = {
   rating: number;
   image: string;
   bio: string;
+  location: string; // Add required location property
+  fee: number; // Add required fee property
   availability: string[];
 };
 
