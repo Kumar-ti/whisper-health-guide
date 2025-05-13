@@ -2,7 +2,7 @@
 import { generalTimeSlots, generateRandomAvailability } from './timeSlots';
 
 // Define the doctor type
-type Doctor = {
+export type Doctor = {
   id: string;
   name: string;
   specialty: string;
@@ -10,8 +10,8 @@ type Doctor = {
   rating: number;
   image: string;
   bio: string;
-  location?: string;
-  fee?: number;
+  location: string; // Make sure location is required
+  fee: number; // Make sure fee is required
   availabilityIndices: number[];
   availability: string[];
 };
