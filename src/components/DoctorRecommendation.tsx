@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { matchSymptomsToSpecialties, SPECIALTIES_LIST } from '@/utils/symptomMatching';
+import { matchSymptomsToSpecialties, SPECIALTIES_LIST, analyzeSymptoms } from '@/utils/symptomMatching';
 import { Filter, Star, MapPin, ToggleLeft, ToggleRight, X } from 'lucide-react';
 
 const DoctorRecommendation: React.FC = () => {
@@ -21,20 +22,41 @@ const DoctorRecommendation: React.FC = () => {
   
   // Filter states
   const [locationFilter, setLocationFilter] = useState<string>('');
-  const [costFilter, setCostFilter] = useState<[number]>([2000]); // Set default to maximum value
+  const [costFilter, setCostFilter] = useState<[number]>([2000]); // Max value to show all by default
   const [ratingFilter, setRatingFilter] = useState<number>(4.0); // Default rating filter
   const [showFilters, setShowFilters] = useState(false);
   
-  // Match symptoms to specialties
-  const matchedSpecialties = matchSymptomsToSpecialties(currentSymptoms);
+  // Get specialty recommendations and scores based on symptoms
+  const specialtyScores = analyzeSymptoms(currentSymptoms);
+  const matchedSpecialties = Object.keys(specialtyScores)
+    .sort((a, b) => specialtyScores[b] - specialtyScores[a]);
+  
+  // Get doctor recommendations with specialty-based ranking
+  const getDoctorRankingScore = (doctor: any) => {
+    // Base score is the specialty match score
+    let score = specialtyScores[doctor.specialty] || 0;
+    
+    // Add points for rating (0-1 scale)
+    score += (doctor.rating / 5) * 0.3;
+    
+    // Add points for experience (0-0.5 scale, capped at 20 years)
+    score += Math.min(doctor.experience / 20, 1) * 0.2;
+    
+    return score;
+  };
+  
+  // Sort doctors by their relevance to the symptoms
+  const sortedDoctors = [...recommendedDoctors].sort((a, b) => {
+    return getDoctorRankingScore(b) - getDoctorRankingScore(a);
+  });
   
   // Get top matches (initially show only the top 3 best matching doctors)
-  const topMatchedDoctors = recommendedDoctors.slice(0, 3);
+  const topMatchedDoctors = sortedDoctors.slice(0, 3);
   
   // Apply all filters to doctors
   const getFilteredDoctors = () => {
     // Start with either all doctors or just the recommended ones
-    const baseList = viewMode === 'recommended' ? topMatchedDoctors : recommendedDoctors;
+    const baseList = viewMode === 'recommended' ? topMatchedDoctors : sortedDoctors;
     
     return baseList
       .filter(doctor => activeSpecialty === 'all' || doctor.specialty === activeSpecialty)
@@ -79,7 +101,7 @@ const DoctorRecommendation: React.FC = () => {
         </div>
         <p className="text-muted-foreground">
           We've identified potential matches with specialists in: {' '}
-          <span className="font-medium text-foreground">{matchedSpecialties.join(', ')}</span>
+          <span className="font-medium text-foreground">{matchedSpecialties.slice(0, 3).join(', ')}</span>
         </p>
       </div>
       
@@ -134,7 +156,7 @@ const DoctorRecommendation: React.FC = () => {
             
             {/* Cost filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Max Consultation Fee</label>
+              <label className="text-sm font-medium">Max Consultation Fee (₹)</label>
               <div className="pt-2">
                 <Slider
                   value={costFilter}
@@ -197,7 +219,7 @@ const DoctorRecommendation: React.FC = () => {
       <Tabs defaultValue="all" value={activeSpecialty} onValueChange={setActiveSpecialty} className="mb-6">
         <TabsList className="mb-4 overflow-x-auto flex-nowrap">
           <TabsTrigger value="all">All Specialists</TabsTrigger>
-          {matchedSpecialties.map((specialty, index) => (
+          {matchedSpecialties.slice(0, 5).map((specialty, index) => (
             <TabsTrigger key={index} value={specialty}>
               {specialty}
             </TabsTrigger>
@@ -254,6 +276,22 @@ const DoctorRecommendation: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Added specialty match score indicator */}
+                    {specialtyScores[doctor.specialty] > 0 && (
+                      <div className="mt-2 flex items-center">
+                        <span className="text-xs text-muted-foreground mr-2">Symptom match:</span>
+                        <div className="bg-gray-200 h-2 rounded-full w-full max-w-[120px]">
+                          <div 
+                            className="bg-health-primary h-2 rounded-full" 
+                            style={{ width: `${Math.round(specialtyScores[doctor.specialty] * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium ml-2">
+                          {Math.round(specialtyScores[doctor.specialty] * 100)}%
+                        </span>
+                      </div>
+                    )}
                   </CardContent>
                   <CardFooter>
                     <Button 

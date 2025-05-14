@@ -1,4 +1,5 @@
 
+
 // Define specialties
 const SPECIALTIES = {
   DERMATOLOGY: 'Dermatology',
@@ -12,9 +13,9 @@ const SPECIALTIES = {
   GYNECOLOGY: 'Gynecology',
 };
 
-// Expanded keyword mapping to specialties with more common symptoms and variants
+// Expanded and more comprehensive keyword mapping to specialties
 const keywordToSpecialty: Record<string, string[]> = {
-  // Dermatology keywords
+  // Dermatology keywords - skin related issues
   skin: [SPECIALTIES.DERMATOLOGY],
   rash: [SPECIALTIES.DERMATOLOGY],
   acne: [SPECIALTIES.DERMATOLOGY],
@@ -23,8 +24,12 @@ const keywordToSpecialty: Record<string, string[]> = {
   itching: [SPECIALTIES.DERMATOLOGY],
   pimple: [SPECIALTIES.DERMATOLOGY],
   mole: [SPECIALTIES.DERMATOLOGY],
+  dermatitis: [SPECIALTIES.DERMATOLOGY],
+  eczema: [SPECIALTIES.DERMATOLOGY],
+  psoriasis: [SPECIALTIES.DERMATOLOGY],
+  hives: [SPECIALTIES.DERMATOLOGY],
   
-  // ENT keywords
+  // ENT keywords - ear, nose, throat issues
   ear: [SPECIALTIES.ENT],
   nose: [SPECIALTIES.ENT],
   throat: [SPECIALTIES.ENT],
@@ -34,6 +39,8 @@ const keywordToSpecialty: Record<string, string[]> = {
   tonsil: [SPECIALTIES.ENT],
   snore: [SPECIALTIES.ENT],
   snoring: [SPECIALTIES.ENT],
+  hoarse: [SPECIALTIES.ENT],
+  nasal: [SPECIALTIES.ENT],
   
   // General Medicine keywords
   fever: [SPECIALTIES.GENERAL],
@@ -47,8 +54,9 @@ const keywordToSpecialty: Record<string, string[]> = {
   vomit: [SPECIALTIES.GENERAL],
   vomiting: [SPECIALTIES.GENERAL],
   diarrhea: [SPECIALTIES.GENERAL],
+  weakness: [SPECIALTIES.GENERAL],
   
-  // Orthopedics keywords
+  // Orthopedics keywords - bone and joint issues
   joint: [SPECIALTIES.ORTHOPEDICS],
   bone: [SPECIALTIES.ORTHOPEDICS],
   fracture: [SPECIALTIES.ORTHOPEDICS],
@@ -58,15 +66,20 @@ const keywordToSpecialty: Record<string, string[]> = {
   shoulder: [SPECIALTIES.ORTHOPEDICS],
   neck: [SPECIALTIES.ORTHOPEDICS, SPECIALTIES.NEUROLOGY],
   pain: [SPECIALTIES.ORTHOPEDICS, SPECIALTIES.GENERAL],
+  arthritis: [SPECIALTIES.ORTHOPEDICS],
+  swelling: [SPECIALTIES.ORTHOPEDICS],
   
-  // Cardiology keywords
+  // Cardiology keywords - heart related issues
   heart: [SPECIALTIES.CARDIOLOGY],
   chest: [SPECIALTIES.CARDIOLOGY, SPECIALTIES.GENERAL],
   breath: [SPECIALTIES.CARDIOLOGY, SPECIALTIES.GENERAL],
   breathing: [SPECIALTIES.CARDIOLOGY, SPECIALTIES.GENERAL],
   palpitation: [SPECIALTIES.CARDIOLOGY],
+  pressure: [SPECIALTIES.CARDIOLOGY],
+  cholesterol: [SPECIALTIES.CARDIOLOGY],
+  hypertension: [SPECIALTIES.CARDIOLOGY],
   
-  // Neurology keywords
+  // Neurology keywords - brain and nervous system issues
   headache: [SPECIALTIES.NEUROLOGY],
   migraine: [SPECIALTIES.NEUROLOGY],
   dizzy: [SPECIALTIES.NEUROLOGY],
@@ -74,8 +87,10 @@ const keywordToSpecialty: Record<string, string[]> = {
   memory: [SPECIALTIES.NEUROLOGY],
   numbness: [SPECIALTIES.NEUROLOGY],
   tingling: [SPECIALTIES.NEUROLOGY],
+  seizure: [SPECIALTIES.NEUROLOGY],
+  tremor: [SPECIALTIES.NEUROLOGY],
   
-  // Psychiatry keywords
+  // Psychiatry keywords - mental health issues
   anxiety: [SPECIALTIES.PSYCHIATRY],
   anxious: [SPECIALTIES.PSYCHIATRY],
   depression: [SPECIALTIES.PSYCHIATRY],
@@ -84,13 +99,27 @@ const keywordToSpecialty: Record<string, string[]> = {
   stress: [SPECIALTIES.PSYCHIATRY],
   mood: [SPECIALTIES.PSYCHIATRY],
   panic: [SPECIALTIES.PSYCHIATRY],
+  insomnia: [SPECIALTIES.PSYCHIATRY],
+  
+  // Pediatrics keywords - children's health issues
+  child: [SPECIALTIES.PEDIATRICS],
+  infant: [SPECIALTIES.PEDIATRICS],
+  baby: [SPECIALTIES.PEDIATRICS],
+  toddler: [SPECIALTIES.PEDIATRICS],
+  
+  // Gynecology keywords - women's health issues
+  menstrual: [SPECIALTIES.GYNECOLOGY],
+  period: [SPECIALTIES.GYNECOLOGY],
+  pregnancy: [SPECIALTIES.GYNECOLOGY],
+  pregnant: [SPECIALTIES.GYNECOLOGY],
 };
 
 /**
- * Match symptoms to specialties based on keywords
+ * Match symptoms to specialties based on keywords with improved accuracy
  */
 export const matchSymptomsToSpecialties = (symptoms: string[]): string[] => {
-  const specialties = new Set<string>();
+  // Use a map to count specialty matches and their confidence scores
+  const specialtyScores: Record<string, number> = {};
   
   // Process each symptom
   symptoms.forEach(symptom => {
@@ -101,18 +130,24 @@ export const matchSymptomsToSpecialties = (symptoms: string[]): string[] => {
     Object.keys(keywordToSpecialty).forEach(keyword => {
       if (lowerSymptom.includes(keyword)) {
         keywordToSpecialty[keyword].forEach(specialty => {
-          specialties.add(specialty);
+          // Add to score - primary specialties get higher score 
+          specialtyScores[specialty] = (specialtyScores[specialty] || 0) + 1;
         });
       }
     });
   });
   
   // If no matches, default to General Medicine
-  if (specialties.size === 0) {
-    specialties.add(SPECIALTIES.GENERAL);
+  if (Object.keys(specialtyScores).length === 0) {
+    return [SPECIALTIES.GENERAL];
   }
   
-  return Array.from(specialties);
+  // Sort specialties by score (most relevant first)
+  const sortedSpecialties = Object.entries(specialtyScores)
+    .sort((a, b) => b[1] - a[1])
+    .map(entry => entry[0]);
+  
+  return sortedSpecialties;
 };
 
 /**
@@ -160,7 +195,7 @@ export const extractKeywords = (text: string): string[] => {
   }
   
   // If no direct keyword matches, try to extract potential symptoms
-  // This is a very basic implementation - a real app would use NLP
+  // This is a basic implementation - a real app would use NLP
   
   // Look for common symptom phrases
   const commonPhrases = [
@@ -184,4 +219,52 @@ export const extractKeywords = (text: string): string[] => {
   return Array.from(matchedKeywords);
 };
 
+/**
+ * Analyze symptoms and categorize by medical specialty with confidence scores
+ * This provides a more comprehensive analysis for more accurate doctor matching
+ */
+export const analyzeSymptoms = (symptoms: string[]): Record<string, number> => {
+  const specialtyScores: Record<string, number> = {};
+  
+  // If no symptoms provided, return general medicine
+  if (!symptoms.length) {
+    specialtyScores[SPECIALTIES.GENERAL] = 1.0;
+    return specialtyScores;
+  }
+  
+  // Process each symptom and calculate specialty scores
+  symptoms.forEach(symptom => {
+    const lowerSymptom = symptom.toLowerCase();
+    let matched = false;
+    
+    // Match keywords to specialties
+    Object.keys(keywordToSpecialty).forEach(keyword => {
+      if (lowerSymptom.includes(keyword)) {
+        keywordToSpecialty[keyword].forEach(specialty => {
+          // Primary matches get a higher score
+          const score = keywordToSpecialty[keyword][0] === specialty ? 1.0 : 0.5;
+          specialtyScores[specialty] = (specialtyScores[specialty] || 0) + score;
+          matched = true;
+        });
+      }
+    });
+    
+    // If no match found, add a small score to general medicine
+    if (!matched) {
+      specialtyScores[SPECIALTIES.GENERAL] = (specialtyScores[SPECIALTIES.GENERAL] || 0) + 0.3;
+    }
+  });
+  
+  // Normalize scores between 0 and 1
+  const totalScore = Object.values(specialtyScores).reduce((sum, score) => sum + score, 0);
+  if (totalScore > 0) {
+    Object.keys(specialtyScores).forEach(specialty => {
+      specialtyScores[specialty] /= totalScore;
+    });
+  }
+  
+  return specialtyScores;
+};
+
 export const SPECIALTIES_LIST = Object.values(SPECIALTIES);
+

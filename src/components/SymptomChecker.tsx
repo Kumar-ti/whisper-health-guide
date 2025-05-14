@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Send, Check, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useConsultation } from '@/context/ConsultationContext';
-import { getCommonSymptoms, extractKeywords } from '@/utils/symptomMatching';
+import { getCommonSymptoms, extractKeywords, analyzeSymptoms } from '@/utils/symptomMatching';
 
 // Chat message types
 type MessageType = 'bot' | 'user' | 'action';
@@ -52,7 +52,7 @@ const SymptomChecker: React.FC = () => {
     setInputValue('');
     setIsProcessing(true);
     
-    // Extract symptoms from user input with more comprehensive analysis
+    // Extract symptoms from user input with enhanced analysis
     setTimeout(() => {
       const keywords = extractKeywords(userMessage);
       
@@ -62,6 +62,12 @@ const SymptomChecker: React.FC = () => {
           addSymptom(keyword);
         });
         
+        // Analyze the matching and get the best specialties
+        const specialtyScores = analyzeSymptoms([...currentSymptoms, ...keywords]);
+        const topSpecialties = Object.keys(specialtyScores)
+          .sort((a, b) => specialtyScores[b] - specialtyScores[a])
+          .slice(0, 2);
+        
         // For better UX, after second message with symptoms, suggest moving to recommendations
         if (messages.filter(m => m.type === 'user').length >= 1 || keywords.length >= 2) {
           setReadyForRecommendation(true);
@@ -69,7 +75,7 @@ const SymptomChecker: React.FC = () => {
             ...prev,
             { 
               type: 'bot', 
-              text: `I've identified these symptoms: ${keywords.join(', ')}. Based on your symptoms, I can recommend suitable doctors now.` 
+              text: `I've identified these symptoms: ${keywords.join(', ')}. Based on your symptoms, I can recommend ${topSpecialties.length > 0 ? topSpecialties.join(' or ') + ' specialists' : 'suitable doctors'} now.` 
             },
             {
               type: 'action',
@@ -107,13 +113,35 @@ const SymptomChecker: React.FC = () => {
     ]);
     
     // Update suggested symptoms (remove the one selected)
-    setSuggestedSymptoms(prev => prev.filter(s => s !== symptom));
+    setSuggestedSymptoms(prev => {
+      const remaining = prev.filter(s => s !== symptom);
+      // If we have few suggestions left, add some more
+      if (remaining.length < 3) {
+        const allSuggestions = getCommonSymptoms();
+        const currentSet = new Set([...currentSymptoms, symptom.toLowerCase(), ...remaining.map(s => s.toLowerCase())]);
+        const newSuggestions = allSuggestions
+          .filter(s => !currentSet.has(s.toLowerCase()))
+          .slice(0, 5 - remaining.length);
+        return [...remaining, ...newSuggestions];
+      }
+      return remaining;
+    });
     
     // If this is the second symptom or more, suggest moving to doctor recommendations
     if (currentSymptoms.length >= 1) {
+      // Get the best matching specialties
+      const specialtyScores = analyzeSymptoms([...currentSymptoms, symptom.toLowerCase()]);
+      const topSpecialties = Object.keys(specialtyScores)
+        .sort((a, b) => specialtyScores[b] - specialtyScores[a])
+        .slice(0, 2);
+      
       setReadyForRecommendation(true);
       setMessages(prev => [
         ...prev,
+        {
+          type: 'bot',
+          text: `Based on your symptoms, I can recommend ${topSpecialties.length > 0 ? topSpecialties.join(' or ') + ' specialists' : 'suitable doctors'} now.`
+        },
         {
           type: 'action',
           text: 'view_doctors'
